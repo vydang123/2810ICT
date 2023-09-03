@@ -1,3 +1,15 @@
+commit 50e288e5904648a0901224e5ffba300a0634aa33
+Author: vydang123 <140564196+vydang123@users.noreply.github.com>
+Date:   Sun Sep 3 20:49:12 2023 +1000
+
+    missing stuff
+
+commit addf441fb4407307284bab04283509ee06146684
+Author: vydang123 <140564196+vydang123@users.noreply.github.com>
+Date:   Sun Sep 3 20:44:35 2023 +1000
+
+    final version of git_log.txt
+
 commit 340fea6830e45fdd50b5138696689ab9bed6842b
 Author: vydang123 <140564196+vydang123@users.noreply.github.com>
 Date:   Sun Sep 3 20:43:16 2023 +1000
