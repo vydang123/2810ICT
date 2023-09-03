@@ -1,3 +1,47 @@
+commit 340fea6830e45fdd50b5138696689ab9bed6842b
+Author: vydang123 <140564196+vydang123@users.noreply.github.com>
+Date:   Sun Sep 3 20:43:16 2023 +1000
+
+    final version of all documents
+
+commit 6f6bb996f5973d23e903f78765f0cea07fb24d46
+Merge: e1deaaa e819164
+Author: vydang123 <140564196+vydang123@users.noreply.github.com>
+Date:   Sun Sep 3 20:39:38 2023 +1000
+
+    Merge branch 'main' of https://github.com/vydang123/2810ICT-Group-69
+
+commit e1deaaa5063faa4b7f5b2666d16d56e9de86cf5c
+Author: vydang123 <140564196+vydang123@users.noreply.github.com>
+Date:   Sun Sep 3 20:12:39 2023 +1000
+
+    ignore this
+
+commit e8191646a354e84b4130484b52b1e1bfb012dd00
+Author: euler456 <euler5926@gmail.com>
+Date:   Sun Sep 3 20:02:29 2023 +1000
+
+    Final version
+
+commit 3360de1568fcb222f7734e439b66288f65982d39
+Merge: bad6b14 63ecf83
+Author: euler456 <euler5926@gmail.com>
+Date:   Sun Sep 3 20:00:29 2023 +1000
+
+    Final version
+
+commit bad6b14ab49ea3c8a700ab0cac7477952e45a001
+Author: euler456 <euler5926@gmail.com>
+Date:   Sun Sep 3 19:59:01 2023 +1000
+
+    edit picture
+
+commit 63ecf83bd8b49382d0356f5fa904502a066bc7c7
+Author: vydang123 <140564196+vydang123@users.noreply.github.com>
+Date:   Sun Sep 3 18:22:25 2023 +1000
+
+    update on git_log.txt
+
 commit a630fdf5a8eddbd5297740a543c079acde0cb23a
 Author: vydang123 <140564196+vydang123@users.noreply.github.com>
 Date:   Sun Sep 3 18:20:15 2023 +1000
