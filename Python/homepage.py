@@ -60,30 +60,31 @@ class MainPage(wx.Frame):
         
         self.grid = wx.grid.Grid(self.panel, pos=(230, 60), size=(650, 400))  # Adjusted size
         self.grid.Hide()
-
     def show_View_Case_Penalty(self, event):
         # Update the title
         self.title_label.SetLabel("Penalty Details")
         self.intro_label.Hide()  # Hide the introductory text
-        self.search_box = wx.TextCtrl(self.panel, pos=(300, 470), size=(200, 25))
         
         # Initialize filter components
-        self.start_date_label = wx.StaticText(self.panel, label="Start Date:", pos=(520, 475))
-        self.end_date_label = wx.StaticText(self.panel, label="End Date:", pos=(520, 505))
+        self.start_date_label = wx.StaticText(self.panel, label="Start Date:", pos=(230, 80))
+        self.end_date_label = wx.StaticText(self.panel, label="End Date:", pos=(410, 80))
         
         with open("penalty_data_set_2.csv", "r") as file:
             reader = csv.reader(file)
             next(reader)
             months_years = sorted(list(set(f"{date.split('/')[1]}/{date.split('/')[2]}" for date in [row[1] for row in reader] if len(date.split('/')) == 3)), key=lambda x: (x.split('/')[1], x.split('/')[0]))  # Sort by year first, then month
 
-        self.start_date_dropdown = wx.Choice(self.panel, pos=(600, 470), choices=months_years)
-        self.end_date_dropdown = wx.Choice(self.panel, pos=(600, 500), choices=months_years)
+        self.start_date_dropdown = wx.Choice(self.panel, pos=(310, 75), choices=months_years)
+        self.end_date_dropdown = wx.Choice(self.panel, pos=(490, 75), choices=months_years)
         
         self.start_date_dropdown.Bind(wx.EVT_CHOICE, self.on_date_range_selected)
         self.end_date_dropdown.Bind(wx.EVT_CHOICE, self.on_date_range_selected)
         
+        # Adjusting the grid position to be lower
+        self.grid.SetPosition((230, 120))
         self.grid.Show()
         self.panel.Layout()
+
     def adjust_grid_size(self, row_count, col_count):
         if not hasattr(self, "grid_created"):
             self.grid_created = False
