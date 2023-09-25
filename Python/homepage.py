@@ -1,7 +1,9 @@
 import wx
 import wx.grid
-import subprocess
 import csv
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 class MainPage(wx.Frame):
     def __init__(self, parent, title="Sample Page", size=(800, 600)):
@@ -53,15 +55,19 @@ class MainPage(wx.Frame):
         
         self.btn1.Bind(wx.EVT_BUTTON, self.show_View_Case_Penalty)
         self.btn2.Bind(wx.EVT_BUTTON, self.show_Offence_code)
-        
+
         # Aesthetic elements
         self.panel.SetBackgroundColour(wx.Colour(230, 230, 230))  # Light gray for demonstration
         self.Centre()
         
         self.grid = wx.grid.Grid(self.panel, pos=(230, 60), size=(650, 400))  # Adjusted size
         self.grid.Hide()
+        self.fig = Figure(figsize=(5, 4), dpi=100)
+        self.canvas = FigureCanvas(self.panel, -1, self.fig)
+        self.canvas.Hide()
     def show_View_Case_Penalty(self, event):
         # Update the title
+        self.hide_trend_components()
         self.title_label.SetLabel("Penalty Details")
         self.intro_label.Hide()  # Hide the introductory text
         
@@ -85,6 +91,83 @@ class MainPage(wx.Frame):
         self.grid.Show()
         self.panel.Layout()
 
+    def show_Offence_code(self, event):
+        self.hide_trend_components()
+        # Update the title
+        self.title_label.SetLabel("Offence Code Trend")
+        self.intro_label.Hide()  # Hide the introductory text
+
+        # Text input for offence code
+        self.offence_code_label = wx.StaticText(self.panel, label="Enter Offence Code:", pos=(230, 80))
+        self.offence_code_input = wx.TextCtrl(self.panel, pos=(360, 75), size=(200, 25))
+
+        # Button to generate trend
+        self.generate_trend_btn = wx.Button(self.panel, label="Generate Trend", pos=(570, 75), size=(150, 30))
+        self.generate_trend_btn.Bind(wx.EVT_BUTTON, self.generate_trend)
+
+        self.panel.Layout()
+
+    def hide_trend_components(self):
+        """Method to hide all trend-related components."""
+        if hasattr(self, 'offence_code_label'):
+            self.offence_code_label.Hide()
+        if hasattr(self, 'offence_code_input'):
+            self.offence_code_input.Hide()
+        if hasattr(self, 'generate_trend_btn'):
+            self.generate_trend_btn.Hide()
+        self.canvas.Hide()
+
+    def generate_trend(self, event):
+        self.hide_trend_components()
+        offence_code = self.offence_code_input.GetValue().strip()
+        if not offence_code:
+            wx.MessageBox("Please enter an offence code.", "Error", wx.OK | wx.ICON_ERROR)
+            return
+
+        # Read data and filter based on the offence code
+        with open("penalty_data_set_2.csv", "r") as file:
+            reader = csv.reader(file)
+            headers = next(reader)
+            
+            filtered_data = [row for row in reader if row[2] == offence_code]
+
+        if not filtered_data:
+            wx.MessageBox(f"No data found for offence code: {offence_code}", "Info", wx.OK | wx.ICON_INFORMATION)
+            return
+
+        # Extracting the trend data
+        years = [row[1].split('/')[-1] for row in filtered_data]
+        values = [int(row[24]) for row in filtered_data]  # Assuming 24th column has the trend values
+
+        # Sum values by year
+        yearwise_values = {}
+        for year, value in zip(years, values):
+            if year in yearwise_values:
+                yearwise_values[year] += value
+            else:
+                yearwise_values[year] = value
+
+        # Sorting years for plotting
+        sorted_years = sorted(yearwise_values.keys())
+        sorted_values = [yearwise_values[year] for year in sorted_years]
+        ax = self.fig.add_subplot(111)
+        ax.plot(sorted_years, sorted_values, marker='o')
+        ax.set_title(f"Trend for Offence Code: {offence_code}")
+        ax.set_xlabel("Year")
+        ax.set_ylabel("Value")
+        ax.set_xticks(sorted_years)
+        ax.set_xticklabels(sorted_years, rotation=45)
+        
+        # Adjust layout and show
+        self.fig.tight_layout()
+        self.canvas.SetPosition((230, 120))
+        self.canvas.Show()
+        self.canvas.draw()
+
+        # Update layout of main page
+        self.panel.Layout()
+
+        
     def adjust_grid_size(self, row_count, col_count):
         if not hasattr(self, "grid_created"):
             self.grid_created = False
@@ -136,10 +219,6 @@ class MainPage(wx.Frame):
         end_month_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection())
         self.update_grid_with_month_year(start_month_year, end_month_year)
 
-    def show_Offence_code(self, event):
-        self.Hide()  # Hide the main page
-        subprocess.run(['python', 'Offence_code.py'])
-        self.Show()  # Show the main page again after closing Offence_code.py window
 
 
 app = wx.App()
