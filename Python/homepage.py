@@ -135,7 +135,7 @@ class MainPage(wx.Frame):
         # Clear any existing plot on the canvas
         self.hide_trend_components()
         self.fig.clear()
-        
+
         offence_code = self.offence_code_input.GetValue().strip()
         if not offence_code:
             wx.MessageBox("Please enter an offence code.", "Error", wx.OK | wx.ICON_ERROR)
@@ -145,7 +145,7 @@ class MainPage(wx.Frame):
         if self.start_date_dropdown.GetSelection() == wx.NOT_FOUND or self.end_date_dropdown.GetSelection() == wx.NOT_FOUND:
             wx.MessageBox("Please select both a start and end date.", "Error", wx.OK | wx.ICON_ERROR)
             return
-        
+
         start_month_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection())
         end_month_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection())
 
@@ -153,92 +153,37 @@ class MainPage(wx.Frame):
         with open("penalty_data_set_2.csv", "r") as file:
             reader = csv.reader(file)
             headers = next(reader)
-            filtered_data = [row for row in reader if row[2] == offence_code and start_month_year <= f"{row[1].split('/')[1]}/{row[1].split('/')[2]}" <= end_month_year]
+            start_month_year_num = int(start_month_year.split('/')[1] + start_month_year.split('/')[0])
+            end_month_year_num = int(end_month_year.split('/')[1] + end_month_year.split('/')[0])
+            filtered_data = [row for row in reader if row[2] == offence_code and start_month_year_num <= int(row[1].split('/')[-1] + row[1].split('/')[1]) <= end_month_year_num]
+
 
         if not filtered_data:
             wx.MessageBox(f"No data found for offence code: {offence_code} in the selected date range.", "Info", wx.OK | wx.ICON_INFORMATION)
             return
 
-        # Extracting the trend data based on year
-        years = [row[1].split('/')[-1] for row in filtered_data]
+        # Extracting the trend data based on month/year from OFFENCE_MONTH
+        dates = [row[1] for row in filtered_data]
         values = [int(row[24]) for row in filtered_data]  # Assuming 24th column has the trend values
 
-        # Sum values by year
-        yearwise_values = {}
-        for year, value in zip(years, values):
-            if year in yearwise_values:
-                yearwise_values[year] += value
+        # Sum values by date (month/year)
+        datewise_values = {}
+        for date, value in zip(dates, values):
+            if date in datewise_values:
+                datewise_values[date] += value
             else:
-                yearwise_values[year] = value
+                datewise_values[date] = value
 
-        # Sorting years for plotting
-        sorted_years = sorted(yearwise_values.keys())
-        sorted_values = [yearwise_values[year] for year in sorted_years]
+        # Sorting dates (month/year) for plotting
+        sorted_dates = sorted(datewise_values.keys(), key=lambda x: (int(x.split('/')[-1]), int(x.split('/')[1])))  # Sorting by year first, then month
+        sorted_values = [datewise_values[date] for date in sorted_dates]
         ax = self.fig.add_subplot(111)
-        ax.plot(sorted_years, sorted_values, marker='o')
+        ax.plot(sorted_dates, sorted_values, marker='o')
         ax.set_title(f"Trend for Offence Code: {offence_code}")
-        ax.set_xlabel("Year")
+        ax.set_xlabel("Month/Year")
         ax.set_ylabel("Value")
-        ax.set_xticks(sorted_years)
-        ax.set_xticklabels(sorted_years, rotation=45)
-        
-        # Adjust layout and show
-        self.fig.tight_layout()
-        self.canvas.SetPosition((230, 120))
-        self.canvas.Show()
-        self.canvas.draw()
-
-        # Update layout of main page
-        self.panel.Layout()
-
-    def generate_mobile_phone_trend(self, event):
-        # Clear any existing plot on the canvas
-        self.hide_trend_components()
-        self.fig.clear()
-
-        # Offense description to filter for
-        offense_description = "mobile phone"
-
-        # Ensure both dropdowns have a selection before fetching the data
-        if self.start_date_dropdown.GetSelection() == wx.NOT_FOUND or self.end_date_dropdown.GetSelection() == wx.NOT_FOUND:
-            wx.MessageBox("Please select both a start and end date.", "Error", wx.OK | wx.ICON_ERROR)
-            return
-
-        start_month_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection())
-        end_month_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection())
-
-        # Read data and filter based on the offense description and selected date range
-        with open("penalty_data_set_2.csv", "r") as file:
-            reader = csv.reader(file)
-            headers = next(reader)
-            filtered_data = [row for row in reader if offense_description in row[3].lower() and start_month_year <= f"{row[1].split('/')[1]}/{row[1].split('/')[2]}" <= end_month_year]
-
-        if not filtered_data:
-            wx.MessageBox(f"No data found for offense description: {offense_description} in the selected date range.", "Info", wx.OK | wx.ICON_INFORMATION)
-            return
-
-        # Extracting the trend data based on year
-        years = [row[1].split('/')[-1] for row in filtered_data]
-        values = [int(row[24]) for row in filtered_data]  # Assuming 24th column has the trend values
-
-        # Sum values by year
-        yearwise_values = {}
-        for year, value in zip(years, values):
-            if year in yearwise_values:
-                yearwise_values[year] += value
-            else:
-                yearwise_values[year] = value
-
-        # Sorting years for plotting
-        sorted_years = sorted(yearwise_values.keys())
-        sorted_values = [yearwise_values[year] for year in sorted_years]
-        ax = self.fig.add_subplot(111)
-        ax.plot(sorted_years, sorted_values, marker='o')
-        ax.set_title(f"Trend for Offense Description: {offense_description}")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Value")
-        ax.set_xticks(sorted_years)
-        ax.set_xticklabels(sorted_years, rotation=45)
+        ax.set_xticks(sorted_dates)
+        ax.set_xticklabels(sorted_dates, rotation=45)
 
         # Adjust layout and show
         self.fig.tight_layout()
@@ -248,6 +193,74 @@ class MainPage(wx.Frame):
 
         # Update layout of the main page
         self.panel.Layout()
+
+
+    def generate_mobile_phone_trend(self, event):
+        # Clear any existing plot on the canvas
+        self.hide_trend_components()
+        self.fig.clear()
+
+        # Offense description to filter for
+        offense_description = "mobile phone"
+
+        start_month_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection())
+        end_month_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection())
+
+        # Debugging: Print the selected start and end dates
+        print(f"Selected Start Date: {start_month_year}")
+        print(f"Selected End Date: {end_month_year}")
+
+        # Read data and filter based on the offense description and selected date range
+        with open("penalty_data_set_2.csv", "r") as file:
+            reader = csv.reader(file)
+            headers = next(reader)
+            
+            # Debugging: Print the first few rows of the CSV file
+            for _ in range(5):  # Print first 5 rows
+                print(next(reader))
+            # Convert MM/YYYY to YYYYMM for comparison
+            start_month_year_num = int(start_month_year.split('/')[1] + start_month_year.split('/')[0])
+            end_month_year_num = int(end_month_year.split('/')[1] + end_month_year.split('/')[0])
+
+            filtered_data = [row for row in reader if offense_description in row[3].lower() and start_month_year_num <= int(row[1].split('/')[-1] + row[1].split('/')[1]) <= end_month_year_num]
+
+        if not filtered_data:
+            wx.MessageBox(f"No data found for offense description: {offense_description} in the selected date range.", "Info", wx.OK | wx.ICON_INFORMATION)
+            return
+
+        # Extracting the trend data based on month/year from OFFENCE_MONTH
+        dates = [row[1] for row in filtered_data]
+        values = [int(row[24]) for row in filtered_data]  # Assuming 24th column has the trend values
+
+        # Sum values by date (month/year)
+        datewise_values = {}
+        for date, value in zip(dates, values):
+            if date in datewise_values:
+                datewise_values[date] += value
+            else:
+                datewise_values[date] = value
+
+        # Sorting dates (month/year) for plotting
+        sorted_dates = sorted(datewise_values.keys(), key=lambda x: (int(x.split('/')[-1]), int(x.split('/')[0])))  # Sorting by year first, then month
+        sorted_values = [datewise_values[date] for date in sorted_dates]
+        ax = self.fig.add_subplot(111)
+        ax.plot(sorted_dates, sorted_values, marker='o')
+        ax.set_title(f"Trend for Offense Description: {offense_description}")
+        ax.set_xlabel("Month/Year")
+        ax.set_ylabel("Value")
+        ax.set_xticks(sorted_dates)
+        ax.set_xticklabels(sorted_dates, rotation=45)
+
+        # Adjust layout and show
+        self.fig.tight_layout()
+        self.canvas.SetPosition((230, 120))
+        self.canvas.Show()
+        self.canvas.draw()
+
+        # Update layout of the main page
+        self.panel.Layout()
+
+
 
     def show_Mobile_Offence_code(self):
         self.active_panel = wx.Panel(self.panel)        
