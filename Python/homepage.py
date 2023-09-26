@@ -8,7 +8,8 @@ from matplotlib.figure import Figure
 class MainPage(wx.Frame):
     def __init__(self, parent, title="Sample Page", size=(800, 600)):
         super(MainPage, self).__init__(parent, title=title, size=size)
-        self.grid_created = False  
+        self.grid_created = False
+        self.active_panel = None  # Keep track of the active panel
 
         # Setting up the main panel
         self.panel = wx.Panel(self)
@@ -38,23 +39,25 @@ class MainPage(wx.Frame):
         self.intro_label.SetFont(self.intro_font)
         
         # Sidebar with buttons
+        btn_font = wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        
         self.sidebar = wx.Panel(self.panel, pos=(10, 60), size=(200, 300))
         self.sidebar.SetBackgroundColour(wx.Colour(50, 50, 50))  # Darker gray for emphasis
         
-        btn_font = wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
-        
         self.btn1 = wx.Button(self.sidebar, label="View_Case_Penalty", pos=(10, 10), size=(180, 40))
         self.btn2 = wx.Button(self.sidebar, label="Offence_code", pos=(10, 60), size=(180, 40))
-        self.btn3 = wx.Button(self.sidebar, label="Radar/Camera Cases", pos=(10, 210), size=(180, 40))
-       
+        self.btn3 = wx.Button(self.sidebar, label="Radar/Camera Cases", pos=(10, 110), size=(180, 40))
+        self.btn4 = wx.Button(self.sidebar, label="Mobile Phone Usage", pos=(10, 160), size=(180, 40))
+
         self.btn1.SetFont(btn_font)
         self.btn2.SetFont(btn_font)
         self.btn3.SetFont(btn_font)
-        self.btn3.SetFont(btn_font)
+        self.btn4.SetFont(btn_font)
 
-        self.btn1.Bind(wx.EVT_BUTTON, self.show_View_Case_Penalty)
-        self.btn2.Bind(wx.EVT_BUTTON, self.show_Offence_code)
-        self.btn3.Bind(wx.EVT_BUTTON, self.show_radar_camera_cases)
+        self.btn1.Bind(wx.EVT_BUTTON, self.on_button_click)
+        self.btn2.Bind(wx.EVT_BUTTON, self.on_button_click)
+        self.btn3.Bind(wx.EVT_BUTTON, self.on_button_click)
+        self.btn4.Bind(wx.EVT_BUTTON, self.on_button_click)
 
         # Aesthetic elements
         self.panel.SetBackgroundColour(wx.Colour(230, 230, 230))  # Light gray for demonstration
@@ -65,8 +68,45 @@ class MainPage(wx.Frame):
         self.fig = Figure(figsize=(5, 4), dpi=100)
         self.canvas = FigureCanvas(self.panel, -1, self.fig)
         self.canvas.Hide()
-    def show_View_Case_Penalty(self, event):
+
+    def switch_to_page(self, page_name):
+        # Hide or destroy components of the old active panel (if any)
+        if self.active_panel:
+            if hasattr(self, 'start_date_label'):
+                self.start_date_label.Hide()
+            if hasattr(self, 'end_date_label'):
+                self.end_date_label.Hide()
+            if hasattr(self, 'start_date_dropdown'):
+                self.start_date_dropdown.Hide()
+            if hasattr(self, 'end_date_dropdown'):
+                self.end_date_dropdown.Hide()
+            if hasattr(self, 'offence_code_label'):
+                self.offence_code_label.Hide()
+            if hasattr(self, 'offence_code_input'):
+                self.offence_code_input.Hide()
+            if hasattr(self, 'generate_trend_btn'):
+                self.generate_trend_btn.Hide()
+            if hasattr(self, 'generate_mobile_phone_trend_btn'):
+                self.generate_mobile_phone_trend_btn.Hide()
+            if hasattr(self, 'retrieve_cases_btn'):
+                self.retrieve_cases_btn.Hide()  # Hide the "Retrieve Cases" button
+            self.canvas.Hide()
+            self.grid.Hide()
+            self.active_panel.Destroy()
+
+        # Show the components of the selected page
+        if page_name == "View_Case_Penalty":
+            self.show_View_Case_Penalty()
+        elif page_name == "Offence_code":
+            self.show_Offence_code()
+        elif page_name == "Radar/Camera Cases":
+            self.show_radar_camera_cases()
+        elif page_name == "Mobile Phone Usage":
+            self.show_Mobile_Offence_code()
+
+    def show_View_Case_Penalty(self):
         # Update the title
+        self.active_panel = wx.Panel(self.panel)
         self.hide_trend_components()
         self.title_label.SetLabel("Penalty Details")
         self.intro_label.Hide()  # Hide the introductory text
@@ -91,36 +131,9 @@ class MainPage(wx.Frame):
         self.grid.Show()
         self.panel.Layout()
 
-    def show_Offence_code(self, event):
-        self.hide_trend_components()
-        # Update the title
-        self.title_label.SetLabel("Offence Code Trend")
-        self.intro_label.Hide()  # Hide the introductory text
-
-        # Initialize filter components for date range
-        self.start_date_label = wx.StaticText(self.panel, label="Start Date:", pos=(230, 50))
-        self.end_date_label = wx.StaticText(self.panel, label="End Date:", pos=(410, 50))
-
-        with open("penalty_data_set_2.csv", "r") as file:
-            reader = csv.reader(file)
-            next(reader)
-            months_years = sorted(list(set(f"{date.split('/')[1]}/{date.split('/')[2]}" for date in [row[1] for row in reader] if len(date.split('/')) == 3)), key=lambda x: (x.split('/')[1], x.split('/')[0]))  # Sort by year first, then month
-
-        self.start_date_dropdown = wx.Choice(self.panel, pos=(310, 45), choices=months_years)
-        self.end_date_dropdown = wx.Choice(self.panel, pos=(490, 45), choices=months_years)
-        
-        # Text input for offence code
-        self.offence_code_label = wx.StaticText(self.panel, label="Enter Offence Code:", pos=(230, 80))
-        self.offence_code_input = wx.TextCtrl(self.panel, pos=(360, 75), size=(200, 25))
-
-        # Button to generate trend
-        self.generate_trend_btn = wx.Button(self.panel, label="Generate Trend", pos=(570, 75), size=(150, 30))
-        self.generate_trend_btn.Bind(wx.EVT_BUTTON, self.generate_trend)
-        self.panel.Layout()
-
-
     def generate_trend(self, event):
         # Clear any existing plot on the canvas
+        self.hide_trend_components()
         self.fig.clear()
         
         offence_code = self.offence_code_input.GetValue().strip()
@@ -178,7 +191,118 @@ class MainPage(wx.Frame):
         # Update layout of main page
         self.panel.Layout()
 
-    def show_radar_camera_cases(self, event):
+    def generate_mobile_phone_trend(self, event):
+        # Clear any existing plot on the canvas
+        self.hide_trend_components()
+        self.fig.clear()
+
+        # Offense description to filter for
+        offense_description = "mobile phone"
+
+        # Ensure both dropdowns have a selection before fetching the data
+        if self.start_date_dropdown.GetSelection() == wx.NOT_FOUND or self.end_date_dropdown.GetSelection() == wx.NOT_FOUND:
+            wx.MessageBox("Please select both a start and end date.", "Error", wx.OK | wx.ICON_ERROR)
+            return
+
+        start_month_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection())
+        end_month_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection())
+
+        # Read data and filter based on the offense description and selected date range
+        with open("penalty_data_set_2.csv", "r") as file:
+            reader = csv.reader(file)
+            headers = next(reader)
+            filtered_data = [row for row in reader if offense_description in row[3].lower() and start_month_year <= f"{row[1].split('/')[1]}/{row[1].split('/')[2]}" <= end_month_year]
+
+        if not filtered_data:
+            wx.MessageBox(f"No data found for offense description: {offense_description} in the selected date range.", "Info", wx.OK | wx.ICON_INFORMATION)
+            return
+
+        # Extracting the trend data based on year
+        years = [row[1].split('/')[-1] for row in filtered_data]
+        values = [int(row[24]) for row in filtered_data]  # Assuming 24th column has the trend values
+
+        # Sum values by year
+        yearwise_values = {}
+        for year, value in zip(years, values):
+            if year in yearwise_values:
+                yearwise_values[year] += value
+            else:
+                yearwise_values[year] = value
+
+        # Sorting years for plotting
+        sorted_years = sorted(yearwise_values.keys())
+        sorted_values = [yearwise_values[year] for year in sorted_years]
+        ax = self.fig.add_subplot(111)
+        ax.plot(sorted_years, sorted_values, marker='o')
+        ax.set_title(f"Trend for Offense Description: {offense_description}")
+        ax.set_xlabel("Year")
+        ax.set_ylabel("Value")
+        ax.set_xticks(sorted_years)
+        ax.set_xticklabels(sorted_years, rotation=45)
+
+        # Adjust layout and show
+        self.fig.tight_layout()
+        self.canvas.SetPosition((230, 120))
+        self.canvas.Show()
+        self.canvas.draw()
+
+        # Update layout of the main page
+        self.panel.Layout()
+
+    def show_Mobile_Offence_code(self):
+        self.active_panel = wx.Panel(self.panel)        
+        self.hide_trend_components()
+        # Update the title
+        self.title_label.SetLabel("Mobile Phone Usage Trend")
+        self.intro_label.Hide()  # Hide the introductory text
+
+        # Initialize filter components for date range
+        self.start_date_label = wx.StaticText(self.panel, label="Start Date:", pos=(230, 50))
+        self.end_date_label = wx.StaticText(self.panel, label="End Date:", pos=(410, 50))
+
+        with open("penalty_data_set_2.csv", "r") as file:
+            reader = csv.reader(file)
+            next(reader)
+            months_years = sorted(list(set(f"{date.split('/')[1]}/{date.split('/')[2]}" for date in [row[1] for row in reader] if len(date.split('/')) == 3)), key=lambda x: (x.split('/')[1], x.split('/')[0]))  # Sort by year first, then month
+
+        self.start_date_dropdown = wx.Choice(self.panel, pos=(310, 45), choices=months_years)
+        self.end_date_dropdown = wx.Choice(self.panel, pos=(490, 45), choices=months_years)
+
+        # Button to generate trend
+        self.generate_mobile_phone_trend_btn = wx.Button(self.panel, label="Generate Mobile Trend", pos=(570, 75), size=(150, 30))
+        self.generate_mobile_phone_trend_btn.Bind(wx.EVT_BUTTON, self.generate_mobile_phone_trend)
+        self.panel.Layout()
+        
+    def show_Offence_code(self):
+        self.active_panel = wx.Panel(self.panel)        
+        self.hide_trend_components()
+        # Update the title
+        self.title_label.SetLabel("Offence Code Trend")
+        self.intro_label.Hide()  # Hide the introductory text
+
+        # Initialize filter components for date range
+        self.start_date_label = wx.StaticText(self.panel, label="Start Date:", pos=(230, 50))
+        self.end_date_label = wx.StaticText(self.panel, label="End Date:", pos=(410, 50))
+
+        with open("penalty_data_set_2.csv", "r") as file:
+            reader = csv.reader(file)
+            next(reader)
+            months_years = sorted(list(set(f"{date.split('/')[1]}/{date.split('/')[2]}" for date in [row[1] for row in reader] if len(date.split('/')) == 3)), key=lambda x: (x.split('/')[1], x.split('/')[0]))  # Sort by year first, then month
+
+        self.start_date_dropdown = wx.Choice(self.panel, pos=(310, 45), choices=months_years)
+        self.end_date_dropdown = wx.Choice(self.panel, pos=(490, 45), choices=months_years)
+        
+        # Text input for offence code
+        self.offence_code_label = wx.StaticText(self.panel, label="Enter Offence Code:", pos=(230, 80))
+        self.offence_code_input = wx.TextCtrl(self.panel, pos=(360, 75), size=(200, 25))
+
+        # Button to generate trend
+        self.generate_trend_btn = wx.Button(self.panel, label="Generate Trend", pos=(570, 75), size=(150, 30))
+        self.generate_trend_btn.Bind(wx.EVT_BUTTON, self.generate_trend)
+        self.panel.Layout()
+
+    def show_radar_camera_cases(self):
+        self.active_panel = wx.Panel(self.panel)
         # Hide components from other pages
         self.hide_trend_components()
         
@@ -207,6 +331,7 @@ class MainPage(wx.Frame):
 
     def retrieve_radar_camera_cases(self, event):
         # Ensure both dropdowns have a selection before fetching the data
+        self.hide_trend_components()
         if self.start_date_dropdown.GetSelection() == wx.NOT_FOUND or self.end_date_dropdown.GetSelection() == wx.NOT_FOUND:
             wx.MessageBox("Please select both a start and end date.", "Error", wx.OK | wx.ICON_ERROR)
             return
@@ -219,8 +344,8 @@ class MainPage(wx.Frame):
             reader = csv.reader(file)
             headers = next(reader)
             # Assuming offense description is in column 3 (index 2)
-            filtered_data = [row for row in reader if "Radar" in row[2].lower() or "camera" in row[2].lower() and start_month_year <= f"{row[1].split('/')[1]}/{row[1].split('/')[2]}" <= end_month_year]
-        
+            filtered_data = [row for row in reader if ("Camera" in row[3] or "Radar" in row[3]) and start_month_year <= f"{row[1].split('/')[1]}/{row[1].split('/')[2]}" <= end_month_year]
+        print(filtered_data)
         self.adjust_grid_size(len(filtered_data), len(headers))
         for col_num, header in enumerate(headers):
             self.grid.SetColLabelValue(col_num, header)
@@ -288,22 +413,27 @@ class MainPage(wx.Frame):
         self.update_grid_with_month_year(start_month_year, end_month_year)
 
     def hide_trend_components(self):
-        if hasattr(self, 'start_date_label'):
-            self.start_date_label.Hide()
-        if hasattr(self, 'end_date_label'):
-            self.end_date_label.Hide()
-        if hasattr(self, 'start_date_dropdown'):
-            self.start_date_dropdown.Hide()
-        if hasattr(self, 'end_date_dropdown'):
-            self.end_date_dropdown.Hide()
-        if hasattr(self, 'offence_code_label'):
-            self.offence_code_label.Hide()
-        if hasattr(self, 'offence_code_input'):
-            self.offence_code_input.Hide()
-        if hasattr(self, 'generate_trend_btn'):
-            self.generate_trend_btn.Hide()
+        if self.title_label.GetLabel() != "Radar/Camera Cases":
+            if hasattr(self, 'start_date_label') and self.title_label.GetLabel() != "Penalty Details":
+                self.start_date_label.Hide()
+            if hasattr(self, 'end_date_label') and self.title_label.GetLabel() != "Penalty Details":
+                self.end_date_label.Hide()
+            if hasattr(self, 'start_date_dropdown') and self.title_label.GetLabel() != "Penalty Details":
+                self.start_date_dropdown.Hide()
+            if hasattr(self, 'end_date_dropdown') and self.title_label.GetLabel() != "Penalty Details":
+                self.end_date_dropdown.Hide()
+            if hasattr(self, 'offence_code_label'):
+                self.offence_code_label.Hide()
+            if hasattr(self, 'offence_code_input'):
+                self.offence_code_input.Hide()     
+            if hasattr(self, 'generate_trend_btn'):
+                self.generate_trend_btn.Hide()
         self.canvas.Hide()
 
+        
+    def on_button_click(self, event):
+        button_label = event.GetEventObject().GetLabel()
+        self.switch_to_page(button_label)
 
 app = wx.App()
 frame = MainPage(None)
