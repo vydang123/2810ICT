@@ -122,11 +122,15 @@ class MainPage(wx.Frame):
         # Initialize filter components
         self.start_date_label = wx.StaticText(self.panel, label="Start Date:", pos=(230, 80))
         self.end_date_label = wx.StaticText(self.panel, label="End Date:", pos=(410, 80))
-        
-        with open("penalty_data_set_2.csv", "r") as file:
-            reader = csv.reader(file)
-            next(reader)
-            months_years = sorted(list(set(f"{date.split('/')[1]}/{date.split('/')[2]}" for date in [row[1] for row in reader] if len(date.split('/')) == 3)), key=lambda x: (int(x.split('/')[1]), int(x.split('/')[0])))  # Sort by year first, then month
+        try:
+            with open("penalty_data_set_2.csv", "r") as file:
+                reader = csv.reader(file)
+                next(reader)
+                months_years = sorted(list(set(f"{date.split('/')[1]}/{date.split('/')[2]}" for date in [row[1] for row in reader] if len(date.split('/')) == 3)), key=lambda x: (int(x.split('/')[1]), int(x.split('/')[0])))  # Sort by year first, then month
+        except FileNotFoundError:
+            wx.MessageBox("The file 'penalty_data_set_2.csv' was not found.", "Error", wx.OK | wx.ICON_ERROR)
+        except Exception as e:  # This will catch other general exceptions related to file processing
+            wx.MessageBox(f"An error occurred: {e}", "Error", wx.OK | wx.ICON_ERROR)
 
         self.start_date_dropdown = wx.Choice(self.panel, pos=(310, 75), choices=months_years)
         self.end_date_dropdown = wx.Choice(self.panel, pos=(490, 75), choices=months_years)
