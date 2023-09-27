@@ -1,6 +1,7 @@
 import wx
 import wx.grid
 import csv
+import datetime
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -48,16 +49,19 @@ class MainPage(wx.Frame):
         self.btn2 = wx.Button(self.sidebar, label="Offence_code", pos=(10, 60), size=(180, 40))
         self.btn3 = wx.Button(self.sidebar, label="Radar/Camera Cases", pos=(10, 110), size=(180, 40))
         self.btn4 = wx.Button(self.sidebar, label="Mobile Phone Usage", pos=(10, 160), size=(180, 40))
+        self.btn5 = wx.Button(self.sidebar, label="Seatbelt not fastened", pos=(10, 210), size=(180, 40))
 
         self.btn1.SetFont(btn_font)
         self.btn2.SetFont(btn_font)
         self.btn3.SetFont(btn_font)
         self.btn4.SetFont(btn_font)
+        self.btn5.SetFont(btn_font)
 
         self.btn1.Bind(wx.EVT_BUTTON, self.on_button_click)
         self.btn2.Bind(wx.EVT_BUTTON, self.on_button_click)
         self.btn3.Bind(wx.EVT_BUTTON, self.on_button_click)
         self.btn4.Bind(wx.EVT_BUTTON, self.on_button_click)
+        self.btn5.Bind(wx.EVT_BUTTON, self.on_button_click)
 
         # Aesthetic elements
         self.panel.SetBackgroundColour(wx.Colour(230, 230, 230))  # Light gray for demonstration
@@ -88,6 +92,8 @@ class MainPage(wx.Frame):
                 self.generate_trend_btn.Hide()
             if hasattr(self, 'generate_mobile_phone_trend_btn'):
                 self.generate_mobile_phone_trend_btn.Hide()
+            if hasattr(self, 'generate_seatbelt_trend_btn'):
+                self.generate_seatbelt_trend_btn.Hide()
             if hasattr(self, 'retrieve_cases_btn'):
                 self.retrieve_cases_btn.Hide()  # Hide the "Retrieve Cases" button
             self.canvas.Hide()
@@ -103,7 +109,9 @@ class MainPage(wx.Frame):
             self.show_radar_camera_cases()
         elif page_name == "Mobile Phone Usage":
             self.show_Mobile_Offence_code()
-
+        elif page_name == "Seatbelt not fastened":
+            self.show_Seatbelt_Offence_code()
+            
     def show_View_Case_Penalty(self):
         # Update the title
         self.active_panel = wx.Panel(self.panel)
@@ -118,7 +126,7 @@ class MainPage(wx.Frame):
         with open("penalty_data_set_2.csv", "r") as file:
             reader = csv.reader(file)
             next(reader)
-            months_years = sorted(list(set(f"{date.split('/')[1]}/{date.split('/')[2]}" for date in [row[1] for row in reader] if len(date.split('/')) == 3)), key=lambda x: (x.split('/')[1], x.split('/')[0]))  # Sort by year first, then month
+            months_years = sorted(list(set(f"{date.split('/')[1]}/{date.split('/')[2]}" for date in [row[1] for row in reader] if len(date.split('/')) == 3)), key=lambda x: (int(x.split('/')[1]), int(x.split('/')[0])))  # Sort by year first, then month
 
         self.start_date_dropdown = wx.Choice(self.panel, pos=(310, 75), choices=months_years)
         self.end_date_dropdown = wx.Choice(self.panel, pos=(490, 75), choices=months_years)
@@ -194,53 +202,40 @@ class MainPage(wx.Frame):
         # Update layout of the main page
         self.panel.Layout()
 
-
-    def generate_mobile_phone_trend(self, event):
+    def generate_trend_for_offense(self, offense_description):
         # Clear any existing plot on the canvas
         self.hide_trend_components()
         self.fig.clear()
-
-        # Offense description to filter for
-        offense_description = "mobile phone"
+        
         start_month_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection())
         end_month_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection())
 
-        # Debugging: Print the selected start and end dates
-        print(f"Selected Start Date: {start_month_year}")
-        print(f"Selected End Date: {end_month_year}")
+        # Convert MM/YYYY to YYYYMM for comparison
+        start_month_year_num = int(start_month_year.split('/')[1] + start_month_year.split('/')[0])
+        end_month_year_num = int(end_month_year.split('/')[1] + end_month_year.split('/')[0])
 
         # Read data and filter based on the offense description and selected date range
         with open("penalty_data_set_2.csv", "r") as file:
             reader = csv.reader(file)
             headers = next(reader)
-            
-            # Debugging: Print the first few rows of the CSV file
-            for _ in range(5):  # Print first 5 rows
-                print(next(reader))
-            # Convert MM/YYYY to YYYYMM for comparison
-            start_month_year_num = int(start_month_year.split('/')[1] + start_month_year.split('/')[0])
-            end_month_year_num = int(end_month_year.split('/')[1] + end_month_year.split('/')[0])
-
             filtered_data = [row for row in reader if offense_description in row[3].lower() and start_month_year_num <= int(row[1].split('/')[-1] + row[1].split('/')[1]) <= end_month_year_num]
 
         if not filtered_data:
             wx.MessageBox(f"No data found for offense description: {offense_description} in the selected date range.", "Info", wx.OK | wx.ICON_INFORMATION)
             return
 
-        # Extracting the trend data based on month/year from OFFENCE_MONTH
-        dates = [row[1] for row in filtered_data]
-        values = [int(row[24]) for row in filtered_data]  # Assuming 24th column has the trend values
-
-        # Sum values by date (month/year)
+        # Accumulate (sum) the TOTAL_VALUE for each unique date
         datewise_values = {}
-        for date, value in zip(dates, values):
+        for row in filtered_data:
+            date = row[1]
+            value = int(row[24])  # Assuming 24th column has the trend values
             if date in datewise_values:
                 datewise_values[date] += value
             else:
                 datewise_values[date] = value
 
         # Sorting dates (month/year) for plotting
-        sorted_dates = sorted(datewise_values.keys(), key=lambda x: (int(x.split('/')[-1]), int(x.split('/')[0])))  # Sorting by year first, then month
+        sorted_dates = sorted(datewise_values.keys(), key=lambda x: (datetime.datetime.strptime(x, "%d/%m/%Y").year, datetime.datetime.strptime(x, "%d/%m/%Y").month))  # Sorting by year first, then month
         sorted_values = [datewise_values[date] for date in sorted_dates]
         ax = self.fig.add_subplot(111)
         ax.plot(sorted_dates, sorted_values, marker='o')
@@ -259,8 +254,37 @@ class MainPage(wx.Frame):
         # Update layout of the main page
         self.panel.Layout()
 
+    def generate_mobile_phone_trend(self, event):
+        self.generate_trend_for_offense("mobile phone")
+
+    def generate_seatbelt_trend(self, event):
+        self.generate_trend_for_offense("seatbelt")
 
 
+    def show_Seatbelt_Offence_code(self):
+        self.active_panel = wx.Panel(self.panel)        
+        self.hide_trend_components()
+        # Update the title
+        self.title_label.SetLabel("Seatbelt Not Fastened Trend")
+        self.intro_label.Hide()  # Hide the introductory text
+
+        # Initialize filter components for date range
+        self.start_date_label = wx.StaticText(self.panel, label="Start Date:", pos=(230, 50))
+        self.end_date_label = wx.StaticText(self.panel, label="End Date:", pos=(410, 50))
+
+        with open("penalty_data_set_2.csv", "r") as file:
+            reader = csv.reader(file)
+            next(reader)
+            months_years = sorted(list(set(f"{date.split('/')[1]}/{date.split('/')[2]}" for date in [row[1] for row in reader] if len(date.split('/')) == 3)), key=lambda x: (x.split('/')[1], x.split('/')[0]))  # Sort by year first, then month
+
+        self.start_date_dropdown = wx.Choice(self.panel, pos=(310, 45), choices=months_years)
+        self.end_date_dropdown = wx.Choice(self.panel, pos=(490, 45), choices=months_years)
+
+        # Button to generate trend
+        self.generate_seatbelt_trend_btn = wx.Button(self.panel, label="Generate Mobile Trend", pos=(570, 75), size=(150, 30))
+        self.generate_seatbelt_trend_btn.Bind(wx.EVT_BUTTON, self.generate_seatbelt_trend)
+        self.panel.Layout()
+    
     def show_Mobile_Offence_code(self):
         self.active_panel = wx.Panel(self.panel)        
         self.hide_trend_components()
@@ -284,7 +308,7 @@ class MainPage(wx.Frame):
         self.generate_mobile_phone_trend_btn = wx.Button(self.panel, label="Generate Mobile Trend", pos=(570, 75), size=(150, 30))
         self.generate_mobile_phone_trend_btn.Bind(wx.EVT_BUTTON, self.generate_mobile_phone_trend)
         self.panel.Layout()
-        
+
     def show_Offence_code(self):
         self.active_panel = wx.Panel(self.panel)        
         self.hide_trend_components()
@@ -348,15 +372,22 @@ class MainPage(wx.Frame):
             wx.MessageBox("Please select both a start and end date.", "Error", wx.OK | wx.ICON_ERROR)
             return
         
-        start_month_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection())
-        end_month_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection())
+        start_month, start_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection()).split('/')
+        end_month, end_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection()).split('/')
+        
+        start_date = datetime.date(int(start_year), int(start_month), 1)
+        end_date = datetime.date(int(end_year), int(end_month), 1)
 
         # Read data and filter based on the selected date range and offense description
         with open("penalty_data_set_2.csv", "r") as file:
             reader = csv.reader(file)
             headers = next(reader)
             # Assuming offense description is in column 3 (index 2)
-            filtered_data = [row for row in reader if ("Camera" in row[3] or "Radar" in row[3]) and start_month_year <= f"{row[1].split('/')[1]}/{row[1].split('/')[2]}" <= end_month_year]
+            filtered_data = [row for row in reader if ("Camera" in row[3] or "Radar" in row[3]) and start_date <= datetime.date(int(row[1].split('/')[2]), int(row[1].split('/')[1]), int(row[1].split('/')[0])) <= end_date]
+
+        # Sort the filtered data by date (oldest to latest)
+        filtered_data.sort(key=lambda x: datetime.date(int(x[1].split('/')[2]), int(x[1].split('/')[1]), int(x[1].split('/')[0])))
+
         print(filtered_data)
         self.adjust_grid_size(len(filtered_data), len(headers))
         for col_num, header in enumerate(headers):
@@ -369,6 +400,7 @@ class MainPage(wx.Frame):
         # Auto size columns
         self.grid.AutoSizeColumns()
         self.grid.Show()
+
 
     def adjust_grid_size(self, row_count, col_count):
         self.hide_trend_components()
@@ -389,17 +421,21 @@ class MainPage(wx.Frame):
 
     def update_grid_with_month_year(self, start_month_year, end_month_year):
         self.hide_trend_components()
-        # Extract month and year from the date string
+        
         start_month, start_year = start_month_year.split('/')
         end_month, end_year = end_month_year.split('/')
         
-        # Load data from CSV
+        start_date = datetime.date(int(start_year), int(start_month), 1)
+        end_date = datetime.date(int(end_year), int(end_month), 1)
+
         with open("penalty_data_set_2.csv", "r") as file:
             reader = csv.reader(file)
             headers = next(reader)
-            # Filter the data based on the selected month/year range
-            filtered_data = [row for row in reader if start_month_year <= f"{row[1].split('/')[1]}/{row[1].split('/')[2]}" <= end_month_year]
- 
+            filtered_data = [row for row in reader if start_date <= datetime.date(int(row[1].split('/')[2]), int(row[1].split('/')[1]), int(row[1].split('/')[0])) <= end_date]
+            
+            # Sort the filtered data by date (oldest to latest)
+            filtered_data.sort(key=lambda x: datetime.date(int(x[1].split('/')[2]), int(x[1].split('/')[1]), int(x[1].split('/')[0])))
+
             print(f"Filtered data from {start_month}/{start_year} to {end_month}/{end_year}:")
             print(filtered_data)
             self.adjust_grid_size(len(filtered_data), len(headers))

@@ -1,17 +1,14 @@
-import unittest
-import wx
+import test_main_page
 from unittest.mock import Mock
-
-# Import the class you want to test
 from homepage import MainPage  # Replace 'your_module' with the actual module name
 
-class TestMainPage(unittest.TestCase):
-    def setUp(self):
-        # Create a mock parent window
+class TestMainPage:
+    def setup_method(self, method):
         self.parent = Mock()
-
-        # Create an instance of MainPage
-        self.main_page = MainPage(self.parent)
+        self.main_page = MainPage.__new__(MainPage)
+        # Initialize only the attributes you need for testing
+        self.main_page.parent = self.parent
+        # ... any other necessary attributes ...
 
     def test_init(self):
         # Ensure attributes are initialized correctly
@@ -42,6 +39,27 @@ class TestMainPage(unittest.TestCase):
         self.assertEqual(len(self.main_page.btn3.GetEvents()), 1)
         self.assertEqual(len(self.main_page.btn4.GetEvents()), 1)
 
+    def test_show_View_Case_Penalty(self):
+        # Mock components for view case penalty page
+        self.main_page.panel = Mock()
+        self.main_page.title_label = Mock()
+        self.main_page.intro_label = Mock()
+        self.main_page.grid = Mock()
+        self.main_page.start_date_label = None
+        self.main_page.end_date_label = None
+        self.main_page.start_date_dropdown = None
+        self.main_page.end_date_dropdown = None
+        self.main_page.offence_code_label = None
+        self.main_page.offence_code_input = None
+        self.main_page.generate_trend_btn = None
+        self.main_page.generate_mobile_phone_trend_btn = None
+        self.main_page.retrieve_cases_btn = None
+        self.main_page.canvas = Mock()
+        # Simulate show_View_Case_Penalty
+        self.main_page.show_View_Case_Penalty()
+        self.assertTrue(self.main_page.start_date_label)
+        self.assertTrue(self.main_page.end_date_label)
+        
     def test_on_button_click(self):
         # Create a mock event
         event = Mock()
@@ -60,4 +78,4 @@ class TestMainPage(unittest.TestCase):
         self.assertEqual(self.main_page.active_panel, "Mobile Phone Usage")
 
 if __name__ == '__main__':
-    unittest.main()
+    test_main_page.main()
