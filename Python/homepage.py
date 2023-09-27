@@ -202,7 +202,6 @@ class MainPage(wx.Frame):
 
         # Offense description to filter for
         offense_description = "mobile phone"
-
         start_month_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection())
         end_month_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection())
 
