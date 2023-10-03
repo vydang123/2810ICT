@@ -16,5 +16,3 @@ def test_load_data_from_csv_failed():
     file_path = "penalty_data_set_2.csv"  # Example valid file path
     data = load_data_from_csv(file_path)
     assert len(data) == 0, f"Expected an empty list, but got a list of length {len(data)}."
-
-
