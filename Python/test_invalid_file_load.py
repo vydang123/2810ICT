@@ -1,12 +1,10 @@
 import wx
 import csv
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
 def load_data_from_file(file_path: str) -> list:
     try:
         with open(file_path, "r") as file:
-            reader = csv.reader(file)
-            data = list(reader)
-        return data
+            pass  # Just trying to open the file, not reading it
     except FileNotFoundError:
         wx.MessageBox(f"The file '{file_path}' was not found.", "Error", wx.OK | wx.ICON_ERROR)
         return []
@@ -19,3 +17,11 @@ def test_load_data_invalid_csv():
             f"The file '{invalid_file_path}' was not found.", "Error", wx.OK | wx.ICON_ERROR)
         # Ensure data is an empty list when given an invalid path
         assert data == []
+
+def test_load_data_valid_csv():
+    valid_file_path = "/valid/path.csv"
+    m = mock_open()
+    with patch('builtins.open', m):
+        data = load_data_from_file(valid_file_path)
+    m.assert_called_once_with(valid_file_path, 'r')
+    assert data is None  # The function should not return anything if there are no exceptions

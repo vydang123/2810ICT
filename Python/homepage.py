@@ -129,8 +129,6 @@ class MainPage(wx.Frame):
                 months_years = sorted(list(set(f"{date.split('/')[1]}/{date.split('/')[2]}" for date in [row[1] for row in reader] if len(date.split('/')) == 3)), key=lambda x: (int(x.split('/')[1]), int(x.split('/')[0])))  # Sort by year first, then month
         except FileNotFoundError:
             wx.MessageBox("The file 'penalty_data_set_2.csv' was not found.", "Error", wx.OK | wx.ICON_ERROR)
-        except Exception as e:  # This will catch other general exceptions related to file processing
-            wx.MessageBox(f"An error occurred: {e}", "Error", wx.OK | wx.ICON_ERROR)
 
         self.start_date_dropdown = wx.Choice(self.panel, pos=(310, 75), choices=months_years)
         self.end_date_dropdown = wx.Choice(self.panel, pos=(490, 75), choices=months_years)
@@ -151,11 +149,6 @@ class MainPage(wx.Frame):
         offence_code = self.offence_code_input.GetValue().strip()
         if not offence_code:
             wx.MessageBox("Please enter an offence code.", "Error", wx.OK | wx.ICON_ERROR)
-            return
-
-        # Ensure both dropdowns have a selection before fetching the data
-        if self.start_date_dropdown.GetSelection() == wx.NOT_FOUND or self.end_date_dropdown.GetSelection() == wx.NOT_FOUND:
-            wx.MessageBox("Please select both a start and end date.", "Error", wx.OK | wx.ICON_ERROR)
             return
 
         start_month_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection())
@@ -372,9 +365,6 @@ class MainPage(wx.Frame):
     def retrieve_radar_camera_cases(self, event):
         # Ensure both dropdowns have a selection before fetching the data
         self.hide_trend_components()
-        if self.start_date_dropdown.GetSelection() == wx.NOT_FOUND or self.end_date_dropdown.GetSelection() == wx.NOT_FOUND:
-            wx.MessageBox("Please select both a start and end date.", "Error", wx.OK | wx.ICON_ERROR)
-            return
         
         start_month, start_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection()).split('/')
         end_month, end_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection()).split('/')
@@ -408,8 +398,6 @@ class MainPage(wx.Frame):
 
     def adjust_grid_size(self, row_count, col_count):
         self.hide_trend_components()
-        if not hasattr(self, "grid_created"):
-            self.grid_created = False
 
         if not self.grid_created:
             self.grid.CreateGrid(row_count, col_count)
@@ -455,11 +443,7 @@ class MainPage(wx.Frame):
 
     def on_date_range_selected(self, event):
         self.hide_trend_components()
-        # Ensure both dropdowns have a selection before updating the grid
-        if self.start_date_dropdown.GetSelection() == wx.NOT_FOUND or self.end_date_dropdown.GetSelection() == wx.NOT_FOUND:
-            wx.MessageBox("Please select both a start and end date.", "Error", wx.OK | wx.ICON_ERROR)
-            return
-        
+
         start_month_year = self.start_date_dropdown.GetString(self.start_date_dropdown.GetSelection())
         end_month_year = self.end_date_dropdown.GetString(self.end_date_dropdown.GetSelection())
         self.update_grid_with_month_year(start_month_year, end_month_year)

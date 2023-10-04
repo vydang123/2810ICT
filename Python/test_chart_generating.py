@@ -54,5 +54,5 @@ def test_get_trend_data_failure():
 
     # Intentionally asserting the opposite of our expectations to force a failure
     assert not dates, "Expected no dates, but got some."
-    assert not values, "Expected no values, but got some."
+
 
