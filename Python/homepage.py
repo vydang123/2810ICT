@@ -278,7 +278,7 @@ class MainPage(wx.Frame):
         self.end_date_dropdown = wx.Choice(self.panel, pos=(490, 45), choices=months_years)
 
         # Button to generate trend
-        self.generate_seatbelt_trend_btn = wx.Button(self.panel, label="Generate Mobile Trend", pos=(570, 75), size=(150, 30))
+        self.generate_seatbelt_trend_btn = wx.Button(self.panel, label="Generate Trend", pos=(570, 75), size=(150, 30))
         self.generate_seatbelt_trend_btn.Bind(wx.EVT_BUTTON, self.generate_seatbelt_trend)
         self.panel.Layout()
     
